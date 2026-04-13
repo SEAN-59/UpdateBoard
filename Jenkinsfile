@@ -14,9 +14,11 @@
 
 def IMAGE_TAG = ''
 def RUN_CONTAINER = ''
+def ENV_FILE = ''
+def HOST_PORT = ''
 
-// NAS 상의 compose 파일 위치
-def COMPOSE_FILE = '/volume1/UpdateBoard/PROJECT/compose.yaml'
+// 런타임 컨테이너가 붙을 Docker 네트워크 (compose.yaml 과 동일해야 함)
+def NETWORK_NAME = 'updateboard-net'
 
 pipeline {
     agent any
@@ -47,12 +49,16 @@ pipeline {
                     if (branchName == 'main') {
                         IMAGE_TAG = 'updateboard:main'
                         RUN_CONTAINER = 'updateboard-run-release'
+                        ENV_FILE = '/volume1/UpdateBoard/PROJECT/Application/private/env/web.prod.env'
+                        HOST_PORT = '7001'
                         echo ">>> [PROD Mode] Target Image: ${IMAGE_TAG}"
                         echo ">>> [PROD Mode] Target Container: ${RUN_CONTAINER}"
                     }
                     else if (branchName == 'develop' || branchName ==~ /^hotfix\/.+/) {
                         IMAGE_TAG = 'updateboard:develop'
                         RUN_CONTAINER = 'updateboard-run-debug'
+                        ENV_FILE = '/volume1/UpdateBoard/PROJECT/Application/private/env/web.dev.env'
+                        HOST_PORT = '7002'
                         echo "[DEV Mode] Target Image: ${IMAGE_TAG}"
                         echo "[DEV Mode] Target Container: ${RUN_CONTAINER} (branch: ${branchName})"
                     }
@@ -92,14 +98,29 @@ pipeline {
 
         // --------------------------------------------------------------------
         // [4] 컨테이너 재배포
-        //     docker compose up -d --force-recreate <service> 로
-        //     해당 서비스만 새 이미지로 재생성한다
+        //     docker compose 플러그인에 의존하지 않도록 순수 docker CLI 사용
+        //     1) 기존 컨테이너 제거
+        //     2) 네트워크 존재 확인 (없으면 생성)
+        //     3) 새 이미지로 컨테이너 기동
         // --------------------------------------------------------------------
         stage('Deploy') {
             steps {
                 script {
                     echo "Redeploying container: ${RUN_CONTAINER}"
-                    sh "docker compose -f ${COMPOSE_FILE} up -d --force-recreate --no-deps ${RUN_CONTAINER}"
+                    sh """
+                        docker rm -f ${RUN_CONTAINER} 2>/dev/null || true
+                        docker network inspect ${NETWORK_NAME} >/dev/null 2>&1 || docker network create ${NETWORK_NAME}
+                        docker run -d \\
+                            --name ${RUN_CONTAINER} \\
+                            --network ${NETWORK_NAME} \\
+                            --env-file ${ENV_FILE} \\
+                            -e TZ=Asia/Seoul \\
+                            -e NODE_ENV=production \\
+                            -e PORT=${HOST_PORT} \\
+                            -p ${HOST_PORT}:${HOST_PORT} \\
+                            --restart unless-stopped \\
+                            ${IMAGE_TAG}
+                    """
                     echo "Redeploy complete."
                 }
             }
