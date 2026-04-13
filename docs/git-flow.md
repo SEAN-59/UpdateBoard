@@ -315,10 +315,51 @@ PR 은 결국 `main` 또는 `develop` 의 커밋이 되므로 **커밋 메시지
 
 | 출처 | 대상 | 비고 |
 |---|---|---|
-| `feature/*` / `fix/*` / `refactor/*` | `develop` | 일반 개발 |
+| `feature/*` / `fix/*` / `refactor/*` / `docs/*` / `chore/*` | `develop` | 일반 개발 |
 | `develop` | `main` | 정기 배포 |
 | `hotfix/*` | `main` | 긴급 배포 (debug 검증 통과 후) |
 | `main` | `develop` | hotfix 백머지 (수동) |
+
+### 6.5. 머지 전략
+
+본 프로젝트는 **Create a merge commit** 전략만 사용한다. Squash merge 와 Rebase merge 는 GitHub 저장소 설정에서 비활성화되어 있다.
+
+| 항목 | 값 |
+|---|---|
+| 전략 | Create a merge commit (개별 커밋 보존) |
+| 머지 커밋 title | `PR_TITLE` (PR 타이틀을 자동 사용) |
+| 머지 커밋 body | `PR_BODY` (PR 본문을 자동 사용) |
+| 머지 후 브랜치 | 자동 삭제 (`delete_branch_on_merge: true`) |
+
+#### 왜 이 전략인가
+
+- **개별 커밋 히스토리 보존** — `git blame`, `git log`, `git bisect` 의 정확도 유지. 작업 진행 과정 추적 가능
+- **시각적 PR 경계** — `git log --graph` 에서 머지 커밋을 통해 PR 단위가 명확히 구분됨
+- **깔끔한 머지 메시지** — GitHub 의 기본 `Merge pull request #N from ...` 대신 PR 타이틀이 그대로 머지 커밋 메시지가 되므로, develop/main 의 history 가 Conventional Commits 를 따르는 깔끔한 형태가 됨
+- **revert 단위 유연성** — PR 전체 revert (머지 커밋 revert) 또는 개별 커밋 revert 모두 가능
+
+#### `git log --graph` 결과 예시
+
+```
+*   docs: Establish git-flow guidelines and PR template (#1)
+|\
+| * docs: Add PR template
+| * docs: Write git-flow.md
+|/
+*   feat: Implement admin login page (#5)
+|\
+| * feat: Add login form component
+| * feat: Add login validation
+|/
+*   ...
+```
+
+머지 커밋 자체가 PR 타이틀이고, 그 안에 개별 커밋들이 전부 보존된다.
+
+#### Squash / Rebase 를 쓰지 않는 이유
+
+- **Squash** — 개별 커밋이 사라져서 작업 과정과 `git blame` 정밀도를 잃는다
+- **Rebase** — PR 단위 시각적 경계가 사라지고 revert 단위가 모호해진다
 
 ### 6.5. Merge 후 후처리
 
