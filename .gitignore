@@ -1,0 +1,83 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# 의존성
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# 테스트 커버리지
+/coverage
+
+# Next.js 빌드 산출물
+/.next/
+/out/
+
+# 프로덕션 빌드
+/build
+/dist
+
+# OS 메타파일
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# 보안 관련
+*.pem
+*.key
+*.crt
+
+# 로그
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# 환경 변수 (서버 스토리지에서 관리, 저장소에 올리지 않음)
+.env
+.env.*
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE / 에디터
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.history/
+
+# 로컬 임시 / 백업
+*.tmp
+*.temp
+*.bak
+*.orig
+*.local
+
+# 비공개 리소스 (로컬에서만 참조)
+private/
+secrets/
+
+# 로컬 DB 파일 (sqlite 등으로 테스트할 경우)
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+
+# Claude / AI 에이전트 설정 (로컬 전용)
+CLAUDE.md
+AGENTS.md
+.claude/
