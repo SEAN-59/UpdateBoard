@@ -1,44 +1,41 @@
 // ============================================================================
 // UpdateBoard Jenkins Pipeline
 //
-// 브랜치별 동작
-//   - develop -> updateboard:develop 이미지 빌드 -> updateboard-run-debug 재배포
-//   - main    -> updateboard:main    이미지 빌드 -> updateboard-run-release 재배포
+// 빌드/런 분리 구조 (spms 패턴)
+//   1) 소스 체크아웃 (Jenkins workspace)
+//   2) build 컨테이너에 소스 복사 (docker cp)
+//   3) build 컨테이너 실행 (docker start -a) → npm install + npm run build
+//   4) run 컨테이너 재시작 (docker restart) → 새 빌드 산출물 반영
 //
-// 전제 조건
-//   - Jenkins Job 타입: Multibranch Pipeline (env.BRANCH_NAME 사용)
-//   - Jenkins 에이전트에서 docker / docker compose 명령 실행 가능
-//   - NAS에 compose.yaml 이 COMPOSE_FILE 경로에 존재
-//   - private/env/ 하위 env 파일들이 준비되어 있음
+// 전제 조건 (NAS 쪽에 미리 준비되어 있어야 함)
+//   - compose.yaml 로 5개 컨테이너가 이미 생성되어 있을 것
+//       updateboard-build-debug, updateboard-run-debug,
+//       updateboard-build-release, updateboard-run-release,
+//       updateboard-db
+//   - 환경 파일들이 private/env 에 존재할 것
+//
+// 허용 브랜치
+//   - main        → release 컨테이너 재배포
+//   - develop     → debug 컨테이너 재배포
+//   - hotfix/*    → release 컨테이너 재배포 (운영 긴급 수정)
 // ============================================================================
 
-def IMAGE_TAG = ''
-def RUN_CONTAINER = ''
-def ENV_FILE = ''
-def HOST_PORT = ''
-
-// 런타임 컨테이너가 붙을 Docker 네트워크 (compose.yaml 과 동일해야 함)
-def NETWORK_NAME = 'updateboard-net'
+def TARGET_BUILD = ''
+def TARGET_RUN = ''
+def CONTAINER_SRC_PATH = '/src'
 
 pipeline {
     agent any
 
     options {
-        // 이전 빌드가 진행 중이면 새 빌드가 앞 빌드를 중단하도록
         disableConcurrentBuilds()
-        // 빌드 로그 보존 개수 제한
         buildDiscarder(logRotator(numToKeepStr: '20'))
-        // 전체 타임아웃
         timeout(time: 30, unit: 'MINUTES')
     }
 
     stages {
         // --------------------------------------------------------------------
-        // [1] 브랜치 확인 및 타겟 결정
-        //     허용 브랜치
-        //       - main        -> 운영 컨테이너 (updateboard-run-release)
-        //       - develop     -> 개발 컨테이너 (updateboard-run-debug)
-        //       - hotfix/*    -> 개발 컨테이너 (운영 긴급 수정 검증용)
+        // [1] 브랜치 확인 및 타겟 컨테이너 결정
         // --------------------------------------------------------------------
         stage('Check Branch & Setup') {
             steps {
@@ -47,20 +44,22 @@ pipeline {
                     echo "Current Branch: ${branchName}"
 
                     if (branchName == 'main') {
-                        IMAGE_TAG = 'updateboard:main'
-                        RUN_CONTAINER = 'updateboard-run-release'
-                        ENV_FILE = '/volume1/UpdateBoard/PROJECT/Application/private/env/web.prod.env'
-                        HOST_PORT = '7001'
-                        echo ">>> [PROD Mode] Target Image: ${IMAGE_TAG}"
-                        echo ">>> [PROD Mode] Target Container: ${RUN_CONTAINER}"
+                        TARGET_BUILD = 'updateboard-build-release'
+                        TARGET_RUN = 'updateboard-run-release'
+                        echo ">>> [PROD Mode] Build: ${TARGET_BUILD}"
+                        echo ">>> [PROD Mode] Run: ${TARGET_RUN}"
                     }
-                    else if (branchName == 'develop' || branchName ==~ /^hotfix\/.+/) {
-                        IMAGE_TAG = 'updateboard:develop'
-                        RUN_CONTAINER = 'updateboard-run-debug'
-                        ENV_FILE = '/volume1/UpdateBoard/PROJECT/Application/private/env/web.dev.env'
-                        HOST_PORT = '7002'
-                        echo "[DEV Mode] Target Image: ${IMAGE_TAG}"
-                        echo "[DEV Mode] Target Container: ${RUN_CONTAINER} (branch: ${branchName})"
+                    else if (branchName ==~ /^hotfix\/.+/) {
+                        TARGET_BUILD = 'updateboard-build-release'
+                        TARGET_RUN = 'updateboard-run-release'
+                        echo ">>> [HOTFIX Mode] Build: ${TARGET_BUILD}"
+                        echo ">>> [HOTFIX Mode] Run: ${TARGET_RUN}"
+                    }
+                    else if (branchName == 'develop') {
+                        TARGET_BUILD = 'updateboard-build-debug'
+                        TARGET_RUN = 'updateboard-run-debug'
+                        echo "[DEV Mode] Build: ${TARGET_BUILD}"
+                        echo "[DEV Mode] Run: ${TARGET_RUN}"
                     }
                     else {
                         error "This branch(${branchName}) is not deployable. Allowed: main, develop, hotfix/*"
@@ -70,7 +69,7 @@ pipeline {
         }
 
         // --------------------------------------------------------------------
-        // [2] 소스 체크아웃
+        // [2] 소스 체크아웃 (Jenkins workspace)
         // --------------------------------------------------------------------
         stage('Checkout') {
             steps {
@@ -81,60 +80,57 @@ pipeline {
         }
 
         // --------------------------------------------------------------------
-        // [3] Docker 이미지 빌드
-        //     Dockerfile 은 프로젝트 루트에 위치해야 함
-        //     같은 태그로 재빌드하면 기존 이미지는 dangling 상태가 되며,
-        //     이후 stage 에서 정리한다
+        // [3] build 컨테이너에 소스 복사
+        //     host 볼륨으로 /src 가 마운트되어 있으므로
+        //     docker cp 가 실질적으로 NAS 의 Code 디렉터리를 갱신한다
         // --------------------------------------------------------------------
-        stage('Build Image') {
+        stage('Copy to Container') {
             steps {
                 script {
-                    echo "Building Docker image: ${IMAGE_TAG}"
-                    sh "docker build -t ${IMAGE_TAG} ${WORKSPACE}"
-                    echo "Docker image build complete."
+                    def sourcePath = "${WORKSPACE}/."
+                    echo "Copying source to ${TARGET_BUILD}:${CONTAINER_SRC_PATH}"
+
+                    def containerId = sh(
+                        script: "docker ps -aqf 'name=${TARGET_BUILD}'",
+                        returnStdout: true
+                    ).trim()
+
+                    if (!containerId) {
+                        error "Container ${TARGET_BUILD} not found. Create the compose project on NAS first."
+                    }
+
+                    sh "docker cp ${sourcePath} ${TARGET_BUILD}:${CONTAINER_SRC_PATH}"
+                    echo "Source copy complete."
                 }
             }
         }
 
         // --------------------------------------------------------------------
-        // [4] 컨테이너 재배포
-        //     docker compose 플러그인에 의존하지 않도록 순수 docker CLI 사용
-        //     1) 기존 컨테이너 제거
-        //     2) 네트워크 존재 확인 (없으면 생성)
-        //     3) 새 이미지로 컨테이너 기동
+        // [4] build 컨테이너 실행 (npm install + npm run build)
+        //     docker start -a 는 컨테이너를 attached 모드로 실행하므로
+        //     로그가 Jenkins 콘솔에 실시간 출력되고,
+        //     command 가 종료될 때까지 대기한다
         // --------------------------------------------------------------------
-        stage('Deploy') {
+        stage('Build') {
             steps {
                 script {
-                    echo "Redeploying container: ${RUN_CONTAINER}"
-                    sh """
-                        docker rm -f ${RUN_CONTAINER} 2>/dev/null || true
-                        docker network inspect ${NETWORK_NAME} >/dev/null 2>&1 || docker network create ${NETWORK_NAME}
-                        docker run -d \\
-                            --name ${RUN_CONTAINER} \\
-                            --network ${NETWORK_NAME} \\
-                            --env-file ${ENV_FILE} \\
-                            -e TZ=Asia/Seoul \\
-                            -e NODE_ENV=production \\
-                            -e PORT=${HOST_PORT} \\
-                            -p ${HOST_PORT}:${HOST_PORT} \\
-                            --restart unless-stopped \\
-                            ${IMAGE_TAG}
-                    """
-                    echo "Redeploy complete."
+                    echo "Starting build in ${TARGET_BUILD}..."
+                    sh "docker start -a ${TARGET_BUILD}"
+                    echo "Build complete."
                 }
             }
         }
 
         // --------------------------------------------------------------------
-        // [5] 불필요한 dangling 이미지 정리
-        //     누적 방지용. 현재 사용 중이 아닌 태그 없는 이미지만 삭제
+        // [5] run 컨테이너 재시작
+        //     마운트된 빌드 볼륨에서 새 server.js 를 다시 로드한다
         // --------------------------------------------------------------------
-        stage('Cleanup') {
+        stage('Apply & Restart') {
             steps {
                 script {
-                    sh "docker image prune -f"
-                    echo "Dangling images cleaned up."
+                    echo "Restarting runtime ${TARGET_RUN}..."
+                    sh "docker restart ${TARGET_RUN}"
+                    echo "Restart complete."
                 }
             }
         }
@@ -145,14 +141,12 @@ pipeline {
     // ------------------------------------------------------------------------
     post {
         success {
-            echo "Pipeline SUCCESS: ${env.BRANCH_NAME} -> ${RUN_CONTAINER}"
+            echo "Pipeline SUCCESS: ${env.BRANCH_NAME} -> ${TARGET_RUN}"
         }
         failure {
             echo "Pipeline FAILED: ${env.BRANCH_NAME} branch build"
         }
         always {
-            // 워크스페이스는 다음 빌드 시작 시에도 cleanWs() 로 비워지지만,
-            // 명시적으로 한 번 더 정리
             cleanWs()
         }
     }
