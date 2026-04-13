@@ -33,6 +33,10 @@ pipeline {
     stages {
         // --------------------------------------------------------------------
         // [1] 브랜치 확인 및 타겟 결정
+        //     허용 브랜치
+        //       - main        -> 운영 컨테이너 (updateboard-run-release)
+        //       - develop     -> 개발 컨테이너 (updateboard-run-debug)
+        //       - hotfix/*    -> 개발 컨테이너 (운영 긴급 수정 검증용)
         // --------------------------------------------------------------------
         stage('Check Branch & Setup') {
             steps {
@@ -40,20 +44,20 @@ pipeline {
                     def branchName = env.BRANCH_NAME
                     echo "Current Branch: ${branchName}"
 
-                    if (branchName == 'develop') {
-                        IMAGE_TAG = 'updateboard:develop'
-                        RUN_CONTAINER = 'updateboard-run-debug'
-                        echo "[DEV Mode] Target Image: ${IMAGE_TAG}"
-                        echo "[DEV Mode] Target Container: ${RUN_CONTAINER}"
-                    }
-                    else if (branchName == 'main') {
+                    if (branchName == 'main') {
                         IMAGE_TAG = 'updateboard:main'
                         RUN_CONTAINER = 'updateboard-run-release'
                         echo ">>> [PROD Mode] Target Image: ${IMAGE_TAG}"
                         echo ">>> [PROD Mode] Target Container: ${RUN_CONTAINER}"
                     }
+                    else if (branchName == 'develop' || branchName ==~ /^hotfix\/.+/) {
+                        IMAGE_TAG = 'updateboard:develop'
+                        RUN_CONTAINER = 'updateboard-run-debug'
+                        echo "[DEV Mode] Target Image: ${IMAGE_TAG}"
+                        echo "[DEV Mode] Target Container: ${RUN_CONTAINER} (branch: ${branchName})"
+                    }
                     else {
-                        error "This branch(${branchName}) is not deployable (USE develop or main branch)"
+                        error "This branch(${branchName}) is not deployable. Allowed: main, develop, hotfix/*"
                     }
                 }
             }
