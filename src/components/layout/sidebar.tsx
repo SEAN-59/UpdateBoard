@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { NavLink } from "./nav-link";
+import { SidebarUser } from "./sidebar-user";
 import { ThemeToggle } from "./theme-toggle";
 
 const ADMIN_NAME = "Sean Kim";
@@ -56,8 +57,6 @@ const NAV_ITEMS = [
 ];
 
 export function Sidebar() {
-  const initial = ADMIN_NAME.charAt(0).toUpperCase();
-
   return (
     <aside className="fixed left-0 top-0 z-[var(--z-sticky)] flex h-screen w-[var(--layout-sidebar-width)] flex-col border-r border-[var(--color-border)] bg-[var(--color-bg)]">
       {/* Logo */}
@@ -87,19 +86,7 @@ export function Sidebar() {
       {/* Bottom */}
       <div className="flex-shrink-0 border-t border-[var(--color-border)] p-3">
         <ThemeToggle />
-        <div className="mt-3 flex cursor-pointer items-center gap-2 rounded-[var(--radius-md)] p-2 transition-colors hover:bg-[var(--color-bg-secondary)]">
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--color-accent-light)] text-xs font-semibold text-[var(--color-accent-text)]">
-            {initial}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-xs font-medium text-[var(--color-text-primary)]">
-              {ADMIN_NAME}
-            </p>
-            <span className="truncate text-[10px] text-[var(--color-text-muted)]">
-              {ADMIN_EMAIL}
-            </span>
-          </div>
-        </div>
+        <SidebarUser name={ADMIN_NAME} email={ADMIN_EMAIL} />
       </div>
     </aside>
   );
