@@ -1,26 +1,185 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Design Tokens
+   docs/design/*.html 시안의 :root 토큰을 그대로 옮긴 값.
+   다크모드는 [data-theme="dark"] 로 전환 (next-themes 의
+   attribute="data-theme" 와 일치).
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* accent (HSL 기반, hue/saturation 변수로 파생) */
+  --accent-h: 220;
+  --accent-s: 65%;
+  --color-accent: hsl(var(--accent-h), var(--accent-s), 48%);
+  --color-accent-hover: hsl(var(--accent-h), var(--accent-s), 40%);
+  --color-accent-light: hsl(var(--accent-h), var(--accent-s), 94%);
+  --color-accent-subtle: hsl(var(--accent-h), 30%, 97%);
+  --color-accent-border: hsl(var(--accent-h), var(--accent-s), 82%);
+  --color-accent-text: hsl(var(--accent-h), var(--accent-s), 35%);
+
+  /* neutral */
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f8f8f8;
+  --color-bg-tertiary: #f0f0f0;
+  --color-border: #e5e5e5;
+  --color-border-strong: #d0d0d0;
+  --color-text-primary: #111111;
+  --color-text-secondary: #555555;
+  --color-text-muted: #999999;
+  --color-text-disabled: #cccccc;
+  --color-text-inverse: #ffffff;
+
+  /* status */
+  --color-success: hsl(142, 60%, 42%);
+  --color-success-light: hsl(142, 60%, 95%);
+  --color-warning: hsl(38, 90%, 48%);
+  --color-warning-light: hsl(38, 90%, 95%);
+  --color-danger: hsl(0, 68%, 50%);
+  --color-danger-light: hsl(0, 68%, 95%);
+  --color-info: hsl(200, 70%, 44%);
+  --color-info-light: hsl(200, 70%, 95%);
+
+  /* typography */
+  --font-family: var(--font-noto-sans-kr), -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-md: 1.125rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 1.875rem;
+  --font-size-3xl: 2.25rem;
+  --font-size-4xl: 3rem;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.6;
+  --line-height-relaxed: 1.75;
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.04em;
+  --letter-spacing-wider: 0.08em;
+
+  /* spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* shadow */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+
+  /* z-index */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+
+  /* transition */
+  --transition-fast: 80ms ease;
+  --transition-base: 150ms ease;
+  --transition-slow: 250ms ease;
+
+  /* layout */
+  --layout-sidebar-width: 240px;
+  --layout-topbar-height: 60px;
 }
 
+[data-theme="dark"] {
+  --color-bg: #111111;
+  --color-bg-secondary: #1a1a1a;
+  --color-bg-tertiary: #252525;
+  --color-border: #2e2e2e;
+  --color-border-strong: #3a3a3a;
+  --color-text-primary: #f0f0f0;
+  --color-text-secondary: #a0a0a0;
+  --color-text-muted: #666666;
+  --color-text-disabled: #444444;
+  --color-text-inverse: #111111;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7);
+}
+
+/* Tailwind 4 의 @theme 블록에 디자인 토큰 노출.
+   Tailwind 유틸리티 (text-, bg-, border-, p-, m-, rounded-) 를
+   디자인 토큰 이름 그대로 쓸 수 있게 만든다. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--color-bg);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-tertiary: var(--color-bg-tertiary);
+  --color-border-default: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-disabled: var(--color-text-disabled);
+  --color-text-inverse: var(--color-text-inverse);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-light: var(--color-accent-light);
+  --color-accent-text: var(--color-accent-text);
+  --color-success: var(--color-success);
+  --color-success-light: var(--color-success-light);
+  --color-warning: var(--color-warning);
+  --color-warning-light: var(--color-warning-light);
+  --color-danger: var(--color-danger);
+  --color-danger-light: var(--color-danger-light);
+  --color-info: var(--color-info);
+  --color-info-light: var(--color-info-light);
+
+  --font-sans: var(--font-noto-sans-kr), -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ============================================================
+   Base Reset
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  background: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100%;
+}
+
+/* next-themes 가 첫 페인트 전에 attribute 를 세팅하지 못한 순간을 위한 깜빡임 방지 */
+html.no-transition,
+html.no-transition * {
+  transition: none !important;
 }
