@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>새 버전 추가 — UpdateBoard Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design Tokens ── */
+    :root {
+      --accent-h: 220; --accent-s: 65%;
+      --color-accent:        hsl(var(--accent-h), var(--accent-s), 48%);
+      --color-accent-hover:  hsl(var(--accent-h), var(--accent-s), 40%);
+      --color-accent-light:  hsl(var(--accent-h), var(--accent-s), 94%);
+      --color-accent-subtle: hsl(var(--accent-h), 30%, 97%);
+      --color-accent-border: hsl(var(--accent-h), var(--accent-s), 82%);
+      --color-accent-text:   hsl(var(--accent-h), var(--accent-s), 35%);
+
+      --color-bg:#ffffff; --color-bg-secondary:#f8f8f8; --color-bg-tertiary:#f0f0f0;
+      --color-border:#e5e5e5; --color-border-strong:#d0d0d0;
+      --color-text-primary:#111111; --color-text-secondary:#555555;
+      --color-text-muted:#999999; --color-text-disabled:#cccccc;
+
+      --color-success:hsl(142,60%,42%); --color-success-light:hsl(142,60%,95%);
+      --color-warning:hsl(38,90%,48%);  --color-warning-light:hsl(38,90%,95%);
+      --color-danger:hsl(0,68%,50%);    --color-danger-light:hsl(0,68%,95%);
+      --color-info:hsl(200,70%,44%);    --color-info-light:hsl(200,70%,95%);
+
+      --font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;
+      --font-size-xs:.75rem; --font-size-sm:.875rem; --font-size-base:1rem;
+      --font-size-md:1.125rem; --font-size-lg:1.25rem; --font-size-xl:1.5rem;
+      --font-size-2xl:1.875rem;
+      --font-weight-regular:400; --font-weight-medium:500;
+      --font-weight-semibold:600; --font-weight-bold:700;
+      --line-height-normal:1.6; --line-height-relaxed:1.75;
+      --letter-spacing-tight:-.02em; --letter-spacing-wide:.04em; --letter-spacing-wider:.08em;
+
+      --space-1:.25rem; --space-2:.5rem; --space-3:.75rem; --space-4:1rem;
+      --space-5:1.25rem; --space-6:1.5rem; --space-8:2rem; --space-10:2.5rem;
+      --space-12:3rem; --space-16:4rem;
+
+      --radius-sm:4px; --radius-md:8px; --radius-lg:12px;
+      --radius-xl:16px; --radius-full:9999px;
+
+      --shadow-xs:0 1px 2px rgba(0,0,0,.05);
+      --shadow-sm:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+      --shadow-md:0 4px 12px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.04);
+      --shadow-lg:0 8px 24px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);
+
+      --z-sticky:200;
+      --transition-base:150ms ease; --transition-slow:250ms ease;
+      --layout-sidebar-width:240px;
+    }
+
+    [data-theme="dark"]{
+      --color-bg:#111111; --color-bg-secondary:#1a1a1a; --color-bg-tertiary:#252525;
+      --color-border:#2e2e2e; --color-border-strong:#3a3a3a;
+      --color-text-primary:#f0f0f0; --color-text-secondary:#a0a0a0;
+      --color-text-muted:#666666; --color-text-disabled:#444444;
+      --shadow-xs:0 1px 2px rgba(0,0,0,.4);
+      --shadow-sm:0 1px 4px rgba(0,0,0,.5);
+      --shadow-md:0 4px 12px rgba(0,0,0,.6);
+      --shadow-lg:0 8px 24px rgba(0,0,0,.7);
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:var(--font-family);font-size:var(--font-size-base);color:var(--color-text-primary);background:var(--color-bg);-webkit-font-smoothing:antialiased;}
+
+    /* ── Sidebar ── */
+    .sidebar{width:var(--layout-sidebar-width);flex-shrink:0;position:fixed;top:0;left:0;height:100vh;background:var(--color-bg);border-right:1px solid var(--color-border);display:flex;flex-direction:column;z-index:var(--z-sticky);}
+    .sidebar-logo{padding:var(--space-6) var(--space-5) var(--space-4);border-bottom:1px solid var(--color-border);flex-shrink:0;}
+    .sidebar-logo h2{font-size:var(--font-size-sm);font-weight:var(--font-weight-bold);letter-spacing:var(--letter-spacing-tight);}
+    .sidebar-logo p{font-size:10px;color:var(--color-text-muted);margin-top:2px;}
+    .sidebar-nav{flex:1;overflow-y:auto;padding:var(--space-4) var(--space-3);}
+    .sidebar-group{margin-bottom:var(--space-4);}
+    .sidebar-group-label{font-size:10px;font-weight:var(--font-weight-semibold);letter-spacing:var(--letter-spacing-wider);text-transform:uppercase;color:var(--color-text-disabled);padding:0 var(--space-2);margin-bottom:var(--space-2);}
+    .sidebar-link{display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);color:var(--color-text-secondary);text-decoration:none;padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);transition:all var(--transition-base);margin-bottom:1px;cursor:pointer;}
+    .sidebar-link:hover{background:var(--color-bg-secondary);color:var(--color-text-primary);}
+    .sidebar-link.active{background:var(--color-accent-light);color:var(--color-accent);font-weight:var(--font-weight-medium);}
+    .sidebar-link-icon{width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+    .sidebar-bottom{margin-top:auto;border-top:1px solid var(--color-border);padding:var(--space-3);flex-shrink:0;}
+    .sidebar-user{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2);border-radius:var(--radius-md);cursor:pointer;transition:background var(--transition-base);}
+    .sidebar-user:hover{background:var(--color-bg-secondary);}
+    .sidebar-avatar{width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent-light);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);font-weight:var(--font-weight-semibold);color:var(--color-accent-text);flex-shrink:0;}
+    .sidebar-user-info p{font-size:var(--font-size-xs);font-weight:var(--font-weight-medium);}
+    .sidebar-user-info span{font-size:10px;color:var(--color-text-muted);}
+    .dark-mode-btn{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;font-family:var(--font-family);font-size:var(--font-size-xs);color:var(--color-text-secondary);transition:all var(--transition-base);width:100%;}
+    .dark-mode-btn:hover{background:var(--color-bg-tertiary);color:var(--color-text-primary);}
+
+    /* ── Main ── */
+    .main{margin-left:var(--layout-sidebar-width);min-height:100vh;background:var(--color-bg-secondary);}
+    .main-inner{max-width:760px;padding:var(--space-10) var(--space-8);}
+
+    /* ── Breadcrumb ── */
+    .breadcrumb{display:flex;align-items:center;gap:var(--space-1);flex-wrap:wrap;margin-bottom:var(--space-3);}
+    .breadcrumb-item{font-size:var(--font-size-sm);color:var(--color-text-muted);text-decoration:none;transition:color var(--transition-base);cursor:pointer;}
+    .breadcrumb-item:hover{color:var(--color-text-primary);}
+    .breadcrumb-item.current{color:var(--color-text-primary);font-weight:var(--font-weight-medium);cursor:default;}
+    .breadcrumb-sep{font-size:var(--font-size-xs);color:var(--color-text-disabled);}
+
+    /* ── Page Header ── */
+    .page-header{margin-bottom:var(--space-8);}
+    .page-title{font-size:var(--font-size-2xl);font-weight:var(--font-weight-bold);letter-spacing:var(--letter-spacing-tight);}
+    .page-desc{font-size:var(--font-size-sm);color:var(--color-text-muted);margin-top:var(--space-1);}
+
+    /* ── Card ── */
+    .card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-xs);}
+    .card-section{padding:var(--space-6) var(--space-8);border-bottom:1px solid var(--color-border);}
+    .card-section:last-of-type{border-bottom:none;}
+    .card-section-title{font-size:var(--font-size-md);font-weight:var(--font-weight-semibold);margin-bottom:var(--space-1);}
+    .card-section-desc{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:var(--space-5);}
+    .card-footer{padding:var(--space-4) var(--space-8);background:var(--color-bg-secondary);border-top:1px solid var(--color-border);display:flex;justify-content:flex-end;gap:var(--space-2);border-radius:0 0 var(--radius-lg) var(--radius-lg);}
+
+    /* ── Form ── */
+    .form-group{margin-bottom:var(--space-5);}
+    .form-group:last-child{margin-bottom:0;}
+    .form-label{display:block;font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);margin-bottom:var(--space-2);}
+    .form-label .required{color:var(--color-danger);margin-left:2px;}
+    .form-hint{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-top:var(--space-1);padding-left:var(--space-3);}
+
+    /* ── Input ── */
+    .input{width:100%;font-family:var(--font-family);font-size:var(--font-size-sm);color:var(--color-text-primary);background:var(--color-bg);border:1px solid var(--color-border-strong);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);line-height:var(--line-height-normal);transition:border-color var(--transition-base),box-shadow var(--transition-base);outline:none;}
+    .input::placeholder{color:var(--color-text-disabled);}
+    .input:focus{border-color:var(--color-accent);box-shadow:0 0 0 3px var(--color-accent-light);}
+    .input.is-error{border-color:var(--color-danger);}
+    .input.is-error:focus{box-shadow:0 0 0 3px var(--color-danger-light);}
+    .input.is-valid{border-color:var(--color-success);}
+    textarea.input{resize:vertical;min-height:140px;line-height:var(--line-height-relaxed);}
+
+    /* ── Error Shake ── */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      15%     { transform: translateX(-6px); }
+      30%     { transform: translateX(6px); }
+      45%     { transform: translateX(-4px); }
+      60%     { transform: translateX(4px); }
+      75%     { transform: translateX(-2px); }
+      90%     { transform: translateX(2px); }
+    }
+    .input.shake { animation: shake 0.45s ease; }
+    .card-radio.shake { animation: shake 0.45s ease; }
+    .card-radio.is-error .card-radio-inner { border-color: var(--color-danger); }
+
+    /* ── Input w/ Status Icon ── */
+    .input-status-wrap{position:relative;}
+    .input-status-icon{position:absolute;right:var(--space-3);top:50%;transform:translateY(-50%);display:flex;align-items:center;pointer-events:none;}
+    .input-status-icon.valid{color:var(--color-success);}
+    .input-has-status{padding-right:calc(var(--space-3) + 18px + var(--space-2));}
+
+    /* ── Validation Checklist ── */
+    .validation-list{list-style:none;margin-top:var(--space-2);padding-left:var(--space-3);display:flex;flex-direction:column;gap:var(--space-1);}
+    .validation-rule{display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-xs);color:var(--color-text-muted);transition:color var(--transition-base);}
+    .validation-rule::before{content:'';width:14px;height:14px;border-radius:50%;border:1.5px solid var(--color-border-strong);flex-shrink:0;transition:all var(--transition-base);display:flex;align-items:center;justify-content:center;background:transparent;}
+    .validation-rule.pass{color:var(--color-success);}
+    .validation-rule.pass::before{border-color:var(--color-success);background:var(--color-success);content:'✓';font-size:9px;font-weight:700;color:#fff;line-height:1;}
+    .validation-rule.fail{color:var(--color-danger);}
+    .validation-rule.fail::before{border-color:var(--color-danger);background:var(--color-danger-light);content:'✕';font-size:8px;font-weight:700;color:var(--color-danger);line-height:1;}
+
+    /* ── Card Radio (mode) ── */
+    .mode-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-3);}
+    .card-radio{display:block;cursor:pointer;position:relative;}
+    .card-radio input{position:absolute;opacity:0;width:0;height:0;}
+    .card-radio-inner{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);background:var(--color-bg);border:1.5px solid var(--color-border);border-radius:var(--radius-lg);transition:border-color var(--transition-base),box-shadow var(--transition-base);position:relative;}
+    .card-radio:hover .card-radio-inner{border-color:var(--color-accent-border);}
+    .card-radio input:checked ~ .card-radio-inner{border-color:var(--color-accent);box-shadow:0 0 0 1px var(--color-accent);background:var(--color-accent-light);}
+    [data-theme="dark"] .card-radio input:checked ~ .card-radio-inner{background:var(--color-bg-secondary);}
+    .mode-icon{width:36px;height:36px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--color-bg-secondary);color:var(--color-text-secondary);}
+    .card-radio input:checked ~ .card-radio-inner .mode-icon{background:var(--color-bg);color:var(--color-accent);}
+    [data-theme="dark"] .card-radio input:checked ~ .card-radio-inner .mode-icon{background:var(--color-bg-tertiary);}
+    .mode-info{flex:1;min-width:0;}
+    .mode-name{font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);color:var(--color-text-primary);display:flex;align-items:center;gap:var(--space-2);}
+    .mode-desc{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-top:2px;}
+
+    /* ── Switch Row (checkbox as toggle row) ── */
+    .switch-row{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4);padding:var(--space-4);background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);transition:border-color var(--transition-base);}
+    .switch-row + .switch-row{margin-top:var(--space-3);}
+    .switch-row:hover{border-color:var(--color-border-strong);}
+    .switch-row.is-on{border-color:var(--color-accent);background:var(--color-accent-light);}
+    [data-theme="dark"] .switch-row.is-on{background:var(--color-bg-secondary);}
+    .switch-meta{flex:1;min-width:0;}
+    .switch-title{font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);color:var(--color-text-primary);display:flex;align-items:center;gap:var(--space-2);}
+    .switch-desc{font-size:var(--font-size-xs);color:var(--color-text-muted);margin-top:var(--space-1);line-height:var(--line-height-normal);}
+    /* ── Toggle (가이드라인) ── */
+    .toggle{position:relative;width:40px;height:22px;flex-shrink:0;margin-top:2px;}
+    .toggle input{opacity:0;width:0;height:0;position:absolute;}
+    .toggle-track{position:absolute;inset:0;background:var(--color-border-strong);border-radius:var(--radius-full);cursor:pointer;transition:background var(--transition-base);}
+    .toggle-track::after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform var(--transition-base);box-shadow:var(--shadow-xs);}
+    .toggle input:checked+.toggle-track{background:var(--color-accent);}
+    .toggle input:checked+.toggle-track::after{transform:translateX(18px);}
+    .toggle input:disabled+.toggle-track{opacity:.4;cursor:not-allowed;}
+
+    /* ── Badge ── */
+    .badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:var(--font-weight-semibold);padding:2px 8px;border-radius:var(--radius-full);letter-spacing:var(--letter-spacing-wide);text-transform:uppercase;line-height:1.4;}
+    .badge-accent{background:var(--color-accent-light);color:var(--color-accent-text);}
+    .badge-warning{background:var(--color-warning-light);color:var(--color-warning);}
+    .badge-danger{background:var(--color-danger-light);color:var(--color-danger);}
+    .badge-neutral{background:var(--color-bg-tertiary);color:var(--color-text-secondary);}
+
+    /* ── Alert ── */
+    .alert-warning{display:flex;flex-direction:column;gap:var(--space-1);padding:var(--space-3) var(--space-4);background:var(--color-warning-light);border:1px solid var(--color-warning);border-radius:var(--radius-md);font-size:var(--font-size-xs);color:#7a4f00;margin-top:var(--space-3);line-height:var(--line-height-normal);}
+    [data-theme="dark"] .alert-warning{background:rgba(200,140,0,.1);color:var(--color-warning);}
+    .alert-warning-title{font-weight:var(--font-weight-semibold);font-size:var(--font-size-sm);color:var(--color-warning);}
+
+    /* ── Button ── */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);font-family:var(--font-family);font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);line-height:1;border:1px solid transparent;border-radius:var(--radius-md);cursor:pointer;transition:all var(--transition-base);text-decoration:none;white-space:nowrap;}
+    .btn:disabled{opacity:.4;cursor:not-allowed;}
+    .btn-md{padding:calc(var(--space-2) + 2px) var(--space-4);}
+    .btn-primary{background:var(--color-accent);color:#fff;border-color:var(--color-accent);}
+    .btn-primary:hover:not(:disabled){background:var(--color-accent-hover);border-color:var(--color-accent-hover);}
+    .btn-secondary{background:var(--color-bg);color:var(--color-text-primary);border-color:var(--color-border-strong);}
+    .btn-secondary:hover:not(:disabled){background:var(--color-bg-secondary);}
+
+    /* ── Responsive ── */
+    @media (max-width:768px){
+      .sidebar{transform:translateX(-100%);transition:transform var(--transition-slow);}
+      .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg);}
+      .main{margin-left:0;}
+      .main-inner{padding:var(--space-6) var(--space-4);}
+      .card-section{padding:var(--space-5);}
+      .card-footer{padding:var(--space-4) var(--space-5);}
+      .mode-grid{grid-template-columns:1fr;}
+      .mobile-fab{display:flex !important;}
+    }
+    .mobile-fab{display:none;position:fixed;bottom:var(--space-5);right:var(--space-5);width:48px;height:48px;background:var(--color-accent);color:#fff;border:none;border-radius:var(--radius-full);align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-lg);z-index:calc(var(--z-sticky) + 1);font-size:20px;}
+  </style>
+</head>
+<body>
+
+  <!-- ══ Sidebar ══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <h2>UpdateBoard</h2>
+      <p>Admin Console</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">메뉴</div>
+        <a href="dashboard.html" class="sidebar-link">
+          <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
+          대시보드
+        </a>
+        <a href="apps.html" class="sidebar-link active">
+          <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="10" y1="4" x2="10" y2="20"/></svg></span>
+          앱 관리
+        </a>
+        <a href="api-keys.html" class="sidebar-link">
+          <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
+          API 키
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="dark-mode-btn" onclick="toggleDark()">
+        <span>🌙</span>
+        <span style="flex:1;text-align:left;">다크모드</span>
+      </button>
+      <div class="sidebar-user" style="margin-top:var(--space-3);">
+        <div class="sidebar-avatar">A</div>
+        <div class="sidebar-user-info">
+          <p>Admin</p>
+          <span>admin@updateboard.io</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="mobile-fab" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+  <!-- ══ Main ══ -->
+  <main class="main">
+    <div class="main-inner">
+
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb">
+        <a href="dashboard.html" class="breadcrumb-item">Admin</a>
+        <span class="breadcrumb-sep">/</span>
+        <a href="apps.html" class="breadcrumb-item">앱 관리</a>
+        <span class="breadcrumb-sep">/</span>
+        <a href="app-detail.html" class="breadcrumb-item">MyApp iOS</a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-item current">새 버전 추가</span>
+      </nav>
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1 class="page-title">새 버전 추가</h1>
+        <p class="page-desc">MyApp iOS에 배포할 새 버전 정보를 등록합니다.</p>
+      </div>
+
+      <!-- Form Card -->
+      <form class="card" onsubmit="handleSubmit(event)" novalidate>
+
+        <!-- Section: 모드 -->
+        <div class="card-section">
+          <h2 class="card-section-title">모드</h2>
+          <p class="card-section-desc">이 버전이 속할 배포 채널을 선택하세요. 각 모드는 독립적으로 최신/최소 지원 버전을 관리합니다.</p>
+
+          <div class="mode-grid">
+            <label class="card-radio">
+              <input type="radio" name="mode" value="release" checked />
+              <div class="card-radio-inner">
+                <div class="mode-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 22l-6-4-6 4 1.5-8.5L2 9h7z"/></svg>
+                </div>
+                <div class="mode-info">
+                  <div class="mode-name">Release <span class="badge badge-accent">prod</span></div>
+                  <div class="mode-desc">실제 사용자에게 배포되는 버전</div>
+                </div>
+              </div>
+            </label>
+
+            <label class="card-radio">
+              <input type="radio" name="mode" value="debug" />
+              <div class="card-radio-inner">
+                <div class="mode-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2l1.88 1.88"/><path d="M14.12 3.88L16 2"/><path d="M9 7.13v-1a3.003 3.003 0 0 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6z"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+                </div>
+                <div class="mode-info">
+                  <div class="mode-name">Debug <span class="badge badge-neutral">dev</span></div>
+                  <div class="mode-desc">QA / 내부 테스트용 빌드</div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Section: 버전 정보 -->
+        <div class="card-section">
+          <h2 class="card-section-title">버전 정보</h2>
+          <p class="card-section-desc">SemVer 형식의 버전 문자열과 릴리즈 노트를 작성하세요.</p>
+
+          <!-- Version String -->
+          <div class="form-group">
+            <label class="form-label" for="version">
+              버전<span class="required">*</span>
+            </label>
+            <div class="input-status-wrap">
+              <input
+                type="text"
+                id="version"
+                class="input input-has-status"
+                placeholder="1.0.0"
+                style="font-family:monospace;"
+                autocomplete="off"
+              />
+              <span class="input-status-icon valid" id="versionStatus" style="display:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </div>
+            <ul class="validation-list">
+              <li class="validation-rule" id="ruleSemver">SemVer 형식 (예: 1.2.3, 1.0.0-beta.1)</li>
+              <li class="validation-rule" id="ruleUnique">이 모드에 중복되지 않은 버전</li>
+            </ul>
+          </div>
+
+          <!-- Release Note -->
+          <div class="form-group">
+            <label class="form-label" for="releaseNote">
+              릴리즈 노트
+            </label>
+            <textarea
+              id="releaseNote"
+              class="input"
+              placeholder="이 버전에서 변경된 내용, 버그 수정, 신규 기능 등을 작성하세요."
+            ></textarea>
+            <p class="form-hint">Markdown 문법을 지원합니다. 클라이언트에서 업데이트 안내로 표시될 수 있습니다.</p>
+          </div>
+        </div>
+
+        <!-- Section: 배포 옵션 -->
+        <div class="card-section">
+          <h2 class="card-section-title">배포 옵션</h2>
+          <p class="card-section-desc">이 버전을 등록할 때 함께 적용할 플래그들입니다.</p>
+
+          <!-- Set As Latest -->
+          <label class="switch-row is-on" id="rowLatest">
+            <div class="switch-meta">
+              <div class="switch-title">
+                최신 버전으로 지정
+                <span class="badge badge-accent">Latest</span>
+              </div>
+              <div class="switch-desc">선택한 모드의 기존 Latest 버전을 대체합니다. 클라이언트는 이 버전을 최신으로 인식합니다.</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="isLatest" checked onchange="onSwitchChange(this, 'rowLatest')" />
+              <div class="toggle-track"></div>
+            </label>
+          </label>
+
+          <!-- Force Update (= 최소 지원선으로 지정) -->
+          <label class="switch-row" id="rowForce">
+            <div class="switch-meta">
+              <div class="switch-title">
+                강제 업데이트
+                <span class="badge badge-danger">Force</span>
+              </div>
+              <div class="switch-desc">이 버전을 <strong>최소 지원선</strong>으로 지정합니다. 이 버전 미만의 클라이언트는 반드시 업데이트해야 앱을 사용할 수 있습니다. 같은 모드에서 여러 버전이 Force로 지정된 경우 그 중 가장 높은 버전이 실제 최소 지원선으로 적용됩니다.</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="forceUpdate" onchange="onSwitchChange(this, 'rowForce')" />
+              <div class="toggle-track"></div>
+            </label>
+          </label>
+
+          <!-- Conditional Warning (shown when force update is on) -->
+          <div class="alert-warning" id="forceAlert" style="display:none;">
+            <span class="alert-warning-title">강제 업데이트 주의</span>
+            이 옵션이 켜지면 이 버전 미만의 기존 사용자들이 반드시 이 버전 이상으로 업데이트해야 앱을 실행할 수 있습니다. 배포 전에 스토어 심사 상태를 확인하세요.
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="card-footer">
+          <a href="app-detail.html" class="btn btn-secondary btn-md">취소</a>
+          <button type="submit" class="btn btn-primary btn-md">
+            버전 추가
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </main>
+
+  <script>
+    function toggleDark() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? '' : 'dark');
+    }
+
+    /* ── Switch row active styling ── */
+    function onSwitchChange(input, rowId) {
+      document.getElementById(rowId).classList.toggle('is-on', input.checked);
+      if (rowId === 'rowForce') {
+        document.getElementById('forceAlert').style.display = input.checked ? 'flex' : 'none';
+      }
+    }
+
+    /* ── Version validation (SemVer) ── */
+    const semverRegex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+    const existingVersions = {
+      release: ['1.0.0', '1.0.1', '1.1.0', '1.2.0', '2.0.0'],
+      debug:   ['1.0.0-beta.1', '1.1.0-rc.1', '2.0.0-alpha.3']
+    };
+
+    const versionInput = document.getElementById('version');
+    const versionStatus = document.getElementById('versionStatus');
+    const ruleSemver = document.getElementById('ruleSemver');
+    const ruleUnique = document.getElementById('ruleUnique');
+
+    function currentMode() {
+      const el = document.querySelector('input[name="mode"]:checked');
+      return el ? el.value : 'release';
+    }
+
+    function validateVersion() {
+      const v = versionInput.value.trim();
+      if (!v) {
+        ruleSemver.classList.remove('pass','fail');
+        ruleUnique.classList.remove('pass','fail');
+        versionStatus.style.display = 'none';
+        versionInput.classList.remove('is-valid','is-error');
+        return false;
+      }
+      const semverOk = semverRegex.test(v);
+      const uniqueOk = semverOk && !existingVersions[currentMode()].includes(v);
+
+      ruleSemver.classList.toggle('pass', semverOk);
+      ruleSemver.classList.toggle('fail', !semverOk);
+      ruleUnique.classList.toggle('pass', uniqueOk);
+      ruleUnique.classList.toggle('fail', semverOk && !uniqueOk);
+
+      const allOk = semverOk && uniqueOk;
+      versionStatus.style.display = allOk ? 'flex' : 'none';
+      versionInput.classList.toggle('is-valid', allOk);
+      versionInput.classList.remove('is-error');
+      return allOk;
+    }
+
+    versionInput.addEventListener('input', validateVersion);
+    document.querySelectorAll('input[name="mode"]').forEach(r => r.addEventListener('change', validateVersion));
+
+    /* ── Shake + scroll validation ── */
+    function shakeField(el) {
+      el.classList.remove('shake');
+      void el.offsetWidth;
+      el.classList.add('shake');
+    }
+    function scrollToField(el) {
+      const rect = el.getBoundingClientRect();
+      const y = window.scrollY + rect.top - 120;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      let firstError = null;
+
+      // Version required + valid
+      const v = versionInput.value.trim();
+      if (!v || !validateVersion()) {
+        versionInput.classList.add('is-error');
+        if (!firstError) firstError = versionInput;
+      }
+
+      if (firstError) {
+        scrollToField(firstError);
+        setTimeout(() => shakeField(firstError), 250);
+        return;
+      }
+
+      alert('버전이 추가되었습니다. (데모)');
+    }
+
+    versionInput.addEventListener('input', () => {
+      versionInput.classList.remove('is-error');
+    });
+  </script>
+</body>
+</html>

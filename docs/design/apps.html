@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>앱 관리 — UpdateBoard Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design Tokens ── */
+    :root {
+      --accent-h: 220; --accent-s: 65%;
+      --color-accent:        hsl(var(--accent-h), var(--accent-s), 48%);
+      --color-accent-hover:  hsl(var(--accent-h), var(--accent-s), 40%);
+      --color-accent-light:  hsl(var(--accent-h), var(--accent-s), 94%);
+      --color-accent-subtle: hsl(var(--accent-h), 30%, 97%);
+      --color-accent-border: hsl(var(--accent-h), var(--accent-s), 82%);
+      --color-accent-text:   hsl(var(--accent-h), var(--accent-s), 35%);
+
+      --color-bg:#ffffff; --color-bg-secondary:#f8f8f8; --color-bg-tertiary:#f0f0f0;
+      --color-border:#e5e5e5; --color-border-strong:#d0d0d0;
+      --color-text-primary:#111111; --color-text-secondary:#555555;
+      --color-text-muted:#999999; --color-text-disabled:#cccccc; --color-text-inverse:#ffffff;
+
+      --color-success:hsl(142,60%,42%); --color-success-light:hsl(142,60%,95%);
+      --color-warning:hsl(38,90%,48%);  --color-warning-light:hsl(38,90%,95%);
+      --color-danger:hsl(0,68%,50%);    --color-danger-light:hsl(0,68%,95%);
+      --color-info:hsl(200,70%,44%);    --color-info-light:hsl(200,70%,95%);
+
+      --font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;
+      --font-size-xs:.75rem; --font-size-sm:.875rem; --font-size-base:1rem;
+      --font-size-md:1.125rem; --font-size-lg:1.25rem; --font-size-xl:1.5rem;
+      --font-size-2xl:1.875rem; --font-size-3xl:2.25rem;
+      --font-weight-regular:400; --font-weight-medium:500;
+      --font-weight-semibold:600; --font-weight-bold:700;
+      --line-height-normal:1.6; --line-height-relaxed:1.75;
+      --letter-spacing-tight:-.02em; --letter-spacing-wide:.04em; --letter-spacing-wider:.08em;
+
+      --space-1:.25rem; --space-2:.5rem; --space-3:.75rem; --space-4:1rem;
+      --space-5:1.25rem; --space-6:1.5rem; --space-8:2rem; --space-10:2.5rem;
+      --space-12:3rem; --space-16:4rem;
+
+      --radius-sm:4px; --radius-md:8px; --radius-lg:12px;
+      --radius-xl:16px; --radius-full:9999px;
+
+      --shadow-xs:0 1px 2px rgba(0,0,0,.05);
+      --shadow-sm:0 1px 4px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+      --shadow-md:0 4px 12px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.04);
+      --shadow-lg:0 8px 24px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);
+
+      --z-dropdown:100; --z-sticky:200; --z-modal:400;
+      --transition-base:150ms ease; --transition-slow:250ms ease;
+      --layout-sidebar-width:240px;
+    }
+
+    [data-theme="dark"]{
+      --color-bg:#111111; --color-bg-secondary:#1a1a1a; --color-bg-tertiary:#252525;
+      --color-border:#2e2e2e; --color-border-strong:#3a3a3a;
+      --color-text-primary:#f0f0f0; --color-text-secondary:#a0a0a0;
+      --color-text-muted:#666666; --color-text-disabled:#444444;
+      --shadow-xs:0 1px 2px rgba(0,0,0,.4);
+      --shadow-sm:0 1px 4px rgba(0,0,0,.5);
+      --shadow-md:0 4px 12px rgba(0,0,0,.6);
+      --shadow-lg:0 8px 24px rgba(0,0,0,.7);
+    }
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:var(--font-family);font-size:var(--font-size-base);color:var(--color-text-primary);background:var(--color-bg);-webkit-font-smoothing:antialiased;}
+
+    /* ── Sidebar ── */
+    .sidebar{width:var(--layout-sidebar-width);flex-shrink:0;position:fixed;top:0;left:0;height:100vh;background:var(--color-bg);border-right:1px solid var(--color-border);display:flex;flex-direction:column;z-index:var(--z-sticky);}
+    .sidebar-logo{padding:var(--space-6) var(--space-5) var(--space-4);border-bottom:1px solid var(--color-border);flex-shrink:0;}
+    .sidebar-logo h2{font-size:var(--font-size-sm);font-weight:var(--font-weight-bold);letter-spacing:var(--letter-spacing-tight);}
+    .sidebar-logo p{font-size:10px;color:var(--color-text-muted);margin-top:2px;}
+    .sidebar-nav{flex:1;overflow-y:auto;padding:var(--space-4) var(--space-3);}
+    .sidebar-group{margin-bottom:var(--space-4);}
+    .sidebar-group-label{font-size:10px;font-weight:var(--font-weight-semibold);letter-spacing:var(--letter-spacing-wider);text-transform:uppercase;color:var(--color-text-disabled);padding:0 var(--space-2);margin-bottom:var(--space-2);}
+    .sidebar-link{display:flex;align-items:center;gap:var(--space-2);font-size:var(--font-size-sm);color:var(--color-text-secondary);text-decoration:none;padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);transition:all var(--transition-base);margin-bottom:1px;cursor:pointer;}
+    .sidebar-link:hover{background:var(--color-bg-secondary);color:var(--color-text-primary);}
+    .sidebar-link.active{background:var(--color-accent-light);color:var(--color-accent);font-weight:var(--font-weight-medium);}
+    .sidebar-link-icon{width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+    .sidebar-bottom{margin-top:auto;border-top:1px solid var(--color-border);padding:var(--space-3);flex-shrink:0;}
+    .sidebar-user{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2);border-radius:var(--radius-md);cursor:pointer;transition:background var(--transition-base);}
+    .sidebar-user:hover{background:var(--color-bg-secondary);}
+    .sidebar-avatar{width:32px;height:32px;border-radius:var(--radius-full);background:var(--color-accent-light);display:flex;align-items:center;justify-content:center;font-size:var(--font-size-xs);font-weight:var(--font-weight-semibold);color:var(--color-accent-text);flex-shrink:0;}
+    .sidebar-user-info p{font-size:var(--font-size-xs);font-weight:var(--font-weight-medium);}
+    .sidebar-user-info span{font-size:10px;color:var(--color-text-muted);}
+    .dark-mode-btn{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:var(--radius-md);cursor:pointer;font-family:var(--font-family);font-size:var(--font-size-xs);color:var(--color-text-secondary);transition:all var(--transition-base);width:100%;}
+    .dark-mode-btn:hover{background:var(--color-bg-tertiary);color:var(--color-text-primary);}
+
+    /* ── Main ── */
+    .main{margin-left:var(--layout-sidebar-width);min-height:100vh;background:var(--color-bg-secondary);}
+    .main-inner{max-width:1100px;padding:var(--space-10) var(--space-8);}
+
+    /* ── Page Header ── */
+    .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4);margin-bottom:var(--space-8);flex-wrap:wrap;}
+    .page-header-left h1{font-size:var(--font-size-2xl);font-weight:var(--font-weight-bold);letter-spacing:var(--letter-spacing-tight);}
+    .page-header-left p{font-size:var(--font-size-sm);color:var(--color-text-muted);margin-top:var(--space-1);}
+
+    /* ── Breadcrumb ── */
+    .breadcrumb{display:flex;align-items:center;gap:var(--space-1);flex-wrap:wrap;margin-bottom:var(--space-3);}
+    .breadcrumb-item{font-size:var(--font-size-sm);color:var(--color-text-muted);text-decoration:none;transition:color var(--transition-base);cursor:pointer;}
+    .breadcrumb-item:hover{color:var(--color-text-primary);}
+    .breadcrumb-item.current{color:var(--color-text-primary);font-weight:var(--font-weight-medium);cursor:default;}
+    .breadcrumb-sep{font-size:var(--font-size-xs);color:var(--color-text-disabled);}
+
+    /* ── Button ── */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);font-family:var(--font-family);font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);line-height:1;border:1px solid transparent;border-radius:var(--radius-md);cursor:pointer;transition:all var(--transition-base);text-decoration:none;white-space:nowrap;}
+    .btn:disabled{opacity:.4;cursor:not-allowed;}
+    .btn-sm{padding:var(--space-2) var(--space-3);font-size:var(--font-size-xs);}
+    .btn-md{padding:calc(var(--space-2) + 2px) var(--space-4);}
+    .btn-primary{background:var(--color-accent);color:#fff;border-color:var(--color-accent);}
+    .btn-primary:hover:not(:disabled){background:var(--color-accent-hover);border-color:var(--color-accent-hover);}
+    .btn-secondary{background:var(--color-bg);color:var(--color-text-primary);border-color:var(--color-border-strong);}
+    .btn-secondary:hover:not(:disabled){background:var(--color-bg-secondary);}
+    .btn-ghost{background:transparent;color:var(--color-text-secondary);border-color:transparent;}
+    .btn-ghost:hover:not(:disabled){background:var(--color-bg-secondary);color:var(--color-text-primary);}
+
+    /* ── Badge ── */
+    .badge{display:inline-flex;align-items:center;font-size:var(--font-size-xs);font-weight:var(--font-weight-medium);padding:2px var(--space-2);border-radius:var(--radius-full);line-height:1.4;}
+    .badge-accent{background:var(--color-accent-light);color:var(--color-accent-text);}
+    .badge-success{background:var(--color-success-light);color:var(--color-success);}
+    .badge-warning{background:var(--color-warning-light);color:var(--color-warning);}
+    .badge-neutral{background:var(--color-bg-tertiary);color:var(--color-text-secondary);}
+
+    /* ── Input ── */
+    .input{width:100%;font-family:var(--font-family);font-size:var(--font-size-sm);color:var(--color-text-primary);background:var(--color-bg);border:1px solid var(--color-border-strong);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3);line-height:var(--line-height-normal);transition:border-color var(--transition-base),box-shadow var(--transition-base);outline:none;}
+    .input::placeholder{color:var(--color-text-disabled);}
+    .input:focus{border-color:var(--color-accent);box-shadow:0 0 0 3px var(--color-accent-light);}
+
+    .input-icon-wrap{position:relative;display:flex;align-items:center;}
+    .input-icon{position:absolute;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);font-size:var(--font-size-sm);}
+    .input-icon-left{left:var(--space-3);}
+    .input-with-icon-left{padding-left:calc(var(--space-3) + 14px + var(--space-2));}
+
+    /* ── Toolbar ── */
+    .toolbar{display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-4);flex-wrap:wrap;}
+    .toolbar-search{flex:1;max-width:320px;min-width:200px;}
+    .toolbar-filter{display:flex;align-items:center;gap:var(--space-2);}
+
+    /* ── Custom Select (가이드라인) ── */
+    .custom-select-wrap{position:relative;display:inline-block;}
+    .custom-select-btn{display:flex;align-items:center;text-align:left;cursor:pointer;width:100%;}
+    .custom-select-btn:disabled{opacity:.4;cursor:not-allowed;}
+    .dropdown-menu{position:absolute;top:calc(100% + 4px);left:0;min-width:180px;width:100%;background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);z-index:var(--z-modal);padding:var(--space-1);opacity:0;visibility:hidden;transform:translateY(-4px);transition:opacity var(--transition-base),transform var(--transition-base),visibility var(--transition-base);}
+    .dropdown-menu.open{opacity:1;visibility:visible;transform:translateY(0);}
+    .dropdown-item{display:flex;align-items:center;gap:var(--space-2);width:100%;font-family:var(--font-family);font-size:var(--font-size-sm);color:var(--color-text-primary);background:none;border:none;padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);cursor:pointer;transition:background var(--transition-base);text-align:left;}
+    .dropdown-item:hover{background:var(--color-bg-secondary);}
+
+    /* ── Table ── */
+    .table-wrap{border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;background:var(--color-bg);box-shadow:var(--shadow-xs);}
+    table{width:100%;border-collapse:collapse;}
+    thead tr{background:var(--color-bg-secondary);}
+    th{font-size:var(--font-size-xs);font-weight:var(--font-weight-semibold);color:var(--color-text-muted);text-align:center;padding:var(--space-3) var(--space-4);letter-spacing:var(--letter-spacing-wide);text-transform:uppercase;border-bottom:1px solid var(--color-border);white-space:nowrap;}
+    td{font-size:var(--font-size-sm);color:var(--color-text-primary);padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-border);}
+    tbody tr:last-child td{border-bottom:none;}
+    tbody tr:hover td{background:var(--color-bg-secondary);}
+
+    /* ── App Cell ── */
+    .app-cell{display:flex;align-items:center;gap:var(--space-3);}
+    .app-icon{width:36px;height:36px;border-radius:var(--radius-md);background:var(--color-accent-light);color:var(--color-accent);display:flex;align-items:center;justify-content:center;font-weight:var(--font-weight-semibold);font-size:var(--font-size-sm);flex-shrink:0;}
+    .app-name{font-weight:var(--font-weight-medium);color:var(--color-text-primary);}
+    .app-bundle{font-size:var(--font-size-xs);color:var(--color-text-muted);font-family:monospace;}
+
+    /* ── Version mono ── */
+    .version-mono{font-family:monospace;font-size:var(--font-size-sm);color:var(--color-text-primary);}
+    .version-none{color:var(--color-text-disabled);font-style:italic;font-family:var(--font-family);font-size:var(--font-size-xs);}
+
+    /* ── Actions ── */
+    .actions{display:flex;align-items:center;gap:var(--space-1);justify-content:flex-end;}
+
+    /* ── Pagination ── */
+    .pagination-wrap{display:flex;align-items:center;justify-content:space-between;padding:var(--space-4) var(--space-5);border-top:1px solid var(--color-border);background:var(--color-bg);}
+    .pagination-info{font-size:var(--font-size-xs);color:var(--color-text-muted);}
+    .pagination{display:flex;align-items:center;gap:var(--space-1);}
+    .page-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;font-size:var(--font-size-sm);font-weight:var(--font-weight-medium);border-radius:var(--radius-md);border:1px solid transparent;cursor:pointer;background:transparent;font-family:var(--font-family);color:var(--color-text-secondary);transition:all var(--transition-base);}
+    .page-btn:hover:not(:disabled):not(.active){background:var(--color-bg-secondary);color:var(--color-text-primary);}
+    .page-btn.active{background:var(--color-accent);color:#fff;border-color:var(--color-accent);}
+    .page-btn:disabled{opacity:.4;cursor:not-allowed;}
+    .page-btn.arrow{border-color:var(--color-border-strong);}
+
+    /* ── Empty State ── */
+    .empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--space-12) var(--space-8);}
+    .empty-icon{width:64px;height:64px;background:var(--color-bg-tertiary);border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;margin-bottom:var(--space-5);color:var(--color-text-muted);}
+    .empty-title{font-size:var(--font-size-lg);font-weight:var(--font-weight-semibold);margin-bottom:var(--space-2);}
+    .empty-desc{font-size:var(--font-size-sm);color:var(--color-text-muted);line-height:var(--line-height-relaxed);max-width:320px;margin-bottom:var(--space-6);}
+
+    /* ── Responsive ── */
+    @media (max-width:768px){
+      .sidebar{transform:translateX(-100%);transition:transform var(--transition-slow);}
+      .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg);}
+      .main{margin-left:0;}
+      .main-inner{padding:var(--space-6) var(--space-4);}
+      .mobile-fab{display:flex !important;}
+      table{font-size:var(--font-size-xs);}
+    }
+    .mobile-fab{display:none;position:fixed;bottom:var(--space-5);right:var(--space-5);width:48px;height:48px;background:var(--color-accent);color:#fff;border:none;border-radius:var(--radius-full);align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-lg);z-index:calc(var(--z-sticky) + 1);font-size:20px;}
+  </style>
+</head>
+<body>
+
+  <!-- ══ Sidebar ══ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <h2>UpdateBoard</h2>
+      <p>Admin Console</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-group">
+        <div class="sidebar-group-label">메뉴</div>
+        <a href="dashboard.html" class="sidebar-link">
+          <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
+          대시보드
+        </a>
+        <a href="apps.html" class="sidebar-link active">
+          <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="10" y1="4" x2="10" y2="20"/></svg></span>
+          앱 관리
+        </a>
+        <a href="api-keys.html" class="sidebar-link">
+          <span class="sidebar-link-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></span>
+          API 키
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="dark-mode-btn" onclick="toggleDark()">
+        <span>🌙</span>
+        <span style="flex:1;text-align:left;">다크모드</span>
+      </button>
+      <div class="sidebar-user" style="margin-top:var(--space-3);">
+        <div class="sidebar-avatar">A</div>
+        <div class="sidebar-user-info">
+          <p>Admin</p>
+          <span>admin@updateboard.io</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <button class="mobile-fab" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+  <!-- ══ Main ══ -->
+  <main class="main">
+    <div class="main-inner">
+
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb">
+        <a href="dashboard.html" class="breadcrumb-item">Admin</a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-item current">앱 관리</span>
+      </nav>
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>앱 관리</h1>
+          <p>등록된 애플리케이션 목록과 각 앱의 현재 배포 버전을 관리합니다.</p>
+        </div>
+        <a href="app-new.html" class="btn btn-primary btn-md">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          신규 앱 등록
+        </a>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-search">
+          <div class="input-icon-wrap">
+            <span class="input-icon input-icon-left">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input type="text" class="input input-with-icon-left" placeholder="bundleId 또는 이름으로 검색" />
+          </div>
+        </div>
+        <div class="toolbar-filter">
+          <div class="custom-select-wrap" style="min-width:160px;">
+            <button type="button" class="input custom-select-btn" onclick="toggleDropdown('platformFilter')">전체 플랫폼</button>
+            <div class="dropdown-menu" id="platformFilter">
+              <button class="dropdown-item" onclick="selectDropdown('platformFilter','전체 플랫폼',this)">전체 플랫폼</button>
+              <button class="dropdown-item" onclick="selectDropdown('platformFilter','iOS',this)">iOS</button>
+              <button class="dropdown-item" onclick="selectDropdown('platformFilter','Android',this)">Android</button>
+              <button class="dropdown-item" onclick="selectDropdown('platformFilter','Web',this)">Web</button>
+              <button class="dropdown-item" onclick="selectDropdown('platformFilter','Desktop',this)">Desktop</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>앱</th>
+              <th>플랫폼</th>
+              <th>Release Latest</th>
+              <th>Debug Latest</th>
+              <th>생성일</th>
+              <th>액션</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="app-cell">
+                  <div class="app-icon">M</div>
+                  <div>
+                    <div class="app-name">MyApp iOS</div>
+                    <div class="app-bundle">com.example.myapp.ios</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge badge-accent">iOS</span></td>
+              <td><span class="version-mono">2.4.1</span></td>
+              <td><span class="version-mono">2.4.1-beta.3</span></td>
+              <td style="font-size:var(--font-size-xs);color:var(--color-text-muted);">2026-01-08</td>
+              <td>
+                <div class="actions">
+                  <a href="app-detail.html" class="btn btn-ghost btn-sm">상세</a>
+                  <a href="app-edit.html" class="btn btn-ghost btn-sm">편집</a>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="app-cell">
+                  <div class="app-icon" style="background:var(--color-success-light);color:var(--color-success);">M</div>
+                  <div>
+                    <div class="app-name">MyApp Android</div>
+                    <div class="app-bundle">com.example.myapp.android</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge badge-success">Android</span></td>
+              <td><span class="version-mono">2.4.0</span></td>
+              <td><span class="version-mono">2.4.1-beta.2</span></td>
+              <td style="font-size:var(--font-size-xs);color:var(--color-text-muted);">2026-01-08</td>
+              <td>
+                <div class="actions">
+                  <a href="app-detail.html" class="btn btn-ghost btn-sm">상세</a>
+                  <a href="app-edit.html" class="btn btn-ghost btn-sm">편집</a>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="app-cell">
+                  <div class="app-icon" style="background:var(--color-info-light);color:var(--color-info);">D</div>
+                  <div>
+                    <div class="app-name">Dashboard Web</div>
+                    <div class="app-bundle">io.updateboard.web</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge badge-neutral">Web</span></td>
+              <td><span class="version-mono">1.0.0</span></td>
+              <td><span class="version-none">(없음)</span></td>
+              <td style="font-size:var(--font-size-xs);color:var(--color-text-muted);">2026-02-12</td>
+              <td>
+                <div class="actions">
+                  <a href="app-detail.html" class="btn btn-ghost btn-sm">상세</a>
+                  <a href="app-edit.html" class="btn btn-ghost btn-sm">편집</a>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="app-cell">
+                  <div class="app-icon" style="background:var(--color-warning-light);color:var(--color-warning);">L</div>
+                  <div>
+                    <div class="app-name">Launcher Desktop</div>
+                    <div class="app-bundle">io.updateboard.launcher</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge badge-warning">Desktop</span></td>
+              <td><span class="version-none">(없음)</span></td>
+              <td><span class="version-mono">0.3.0</span></td>
+              <td style="font-size:var(--font-size-xs);color:var(--color-text-muted);">2026-03-25</td>
+              <td>
+                <div class="actions">
+                  <a href="app-detail.html" class="btn btn-ghost btn-sm">상세</a>
+                  <a href="app-edit.html" class="btn btn-ghost btn-sm">편집</a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="pagination-wrap">
+          <p class="pagination-info">총 <strong>4</strong>개 앱 · 1-4 표시</p>
+          <div class="pagination">
+            <button class="page-btn arrow" disabled>←</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn arrow" disabled>→</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    function toggleDark() {
+      const html = document.documentElement;
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', isDark ? '' : 'dark');
+    }
+
+    /* ── Custom Dropdown (가이드라인) ── */
+    function toggleDropdown(id) {
+      const menu = document.getElementById(id);
+      document.querySelectorAll('.dropdown-menu.open').forEach(m => { if (m.id !== id) m.classList.remove('open'); });
+      menu.classList.toggle('open');
+    }
+    function selectDropdown(menuId, text, item) {
+      const menu = document.getElementById(menuId);
+      const btn = menu.previousElementSibling;
+      btn.textContent = text;
+      menu.classList.remove('open');
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.custom-select-wrap')) {
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+      }
+    });
+  </script>
+</body>
+</html>
