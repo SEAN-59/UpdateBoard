@@ -81,3 +81,9 @@ secrets/
 CLAUDE.md
 AGENTS.md
 .claude/
+
+# Playwright 검증 산출물 (로컬 전용, 루트만)
+.playwright-mcp/
+/*.png
+/*.jpeg
+/*.jpg
