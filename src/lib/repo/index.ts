@@ -1,9 +1,13 @@
-// Repository 팩토리 — 환경에 따라 mock 또는 prisma 반환 (Phase 2 에서 prisma 추가)
+// Repository 팩토리 — DATABASE_URL 이 있으면 Prisma, 없으면 mock
 
 import type { Repo } from "./interface";
 import { mockRepo } from "./mock";
+import { prismaRepo } from "./prisma";
 
 export function getRepo(): Repo {
+  if (process.env.DATABASE_URL) {
+    return prismaRepo;
+  }
   return mockRepo;
 }
 

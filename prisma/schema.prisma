@@ -1,0 +1,69 @@
+// UpdateBoard Prisma schema
+// 데이터 모델은 src/lib/types.ts 와 1:1 일치한다.
+// MariaDB / MySQL 양쪽 호환 (provider = "mysql").
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Platform {
+  ios
+  android
+  web
+  desktop
+}
+
+enum VersionMode {
+  debug
+  release
+}
+
+model App {
+  bundleId    String   @id @db.VarChar(100)
+  name        String   @db.VarChar(100)
+  platform    Platform
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions AppVersion[]
+  apiKeys  ApiKey[]
+}
+
+model AppVersion {
+  id             String      @id @default(uuid()) @db.Char(36)
+  bundleId       String      @db.VarChar(100)
+  mode           VersionMode
+  version        String      @db.VarChar(50)
+  releaseNote    String      @db.Text
+  forceUpdate    Boolean     @default(false)
+  isLatest       Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+
+  app App @relation(fields: [bundleId], references: [bundleId], onDelete: Cascade)
+
+  @@index([bundleId, mode])
+  @@index([bundleId, mode, isLatest])
+  @@index([bundleId, mode, forceUpdate])
+}
+
+model ApiKey {
+  id          String    @id @default(uuid()) @db.Char(36)
+  name        String    @db.VarChar(100)
+  bundleId    String?   @db.VarChar(100)
+  tokenPrefix String    @db.VarChar(32)
+  tokenHash   String    @db.VarChar(255)
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  app App? @relation(fields: [bundleId], references: [bundleId], onDelete: Cascade)
+
+  @@index([bundleId])
+  @@index([tokenPrefix])
+}
