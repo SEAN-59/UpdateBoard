@@ -7,7 +7,6 @@ import { revalidatePath } from "next/cache";
 import { getRepo } from "@/lib/repo";
 import type { Platform } from "@/lib/types";
 
-const BUNDLE_ID_REGEX = /^[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$/;
 const ALLOWED_PLATFORMS: Platform[] = ["ios", "android", "web", "desktop"];
 
 export type CreateAppFormState = {
@@ -27,12 +26,12 @@ export async function createAppAction(
 
   const fieldErrors: CreateAppFormState["fieldErrors"] = {};
 
+  // bundleId 는 실제 Apple / Google 의 형식이 느슨해서 (대소문자 혼용, PascalCase 꼬리 등)
+  // 엄격한 역순 도메인 regex 는 오히려 정상 값을 차단한다. 길이와 중복만 검사.
   if (!bundleId) {
     fieldErrors.bundleId = "Bundle ID 를 입력하세요.";
   } else if (bundleId.length < 4 || bundleId.length > 100) {
     fieldErrors.bundleId = "4자 이상, 100자 이하여야 합니다.";
-  } else if (!BUNDLE_ID_REGEX.test(bundleId)) {
-    fieldErrors.bundleId = "역순 도메인 형식을 따라야 합니다 (예: com.company.app).";
   }
 
   if (!name) {
