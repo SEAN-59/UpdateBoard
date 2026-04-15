@@ -1,4 +1,4 @@
-// 앱 상세 — Release/Debug 탭, 각 모드별 latest + min 카드 + 버전 히스토리
+// 앱 상세 — Release/Debug 탭, 각 모드별 latest + force 카드 + 버전 히스토리
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -12,7 +12,7 @@ import { PLATFORM_META } from "@/lib/platform";
 import { getRepo } from "@/lib/repo";
 import type { AppVersion, VersionMode } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { effectiveMinSupported } from "@/lib/version";
+import { effectiveForceVersion } from "@/lib/version";
 
 type PageProps = {
   params: Promise<{ bundleId: string }>;
@@ -119,7 +119,7 @@ function ModePanel({
   versions: AppVersion[];
 }) {
   const latest = versions.find((v) => v.isLatest);
-  const minVersion = effectiveMinSupported(versions);
+  const forceVersion = effectiveForceVersion(versions);
 
   return (
     <>
@@ -136,10 +136,10 @@ function ModePanel({
           }
         />
         <CurrentCard
-          badge={<Badge variant="accent">Min</Badge>}
-          label="최소 지원 버전"
-          version={minVersion?.version}
-          sub={minVersion ? `${formatDate(minVersion.createdAt)} 등록` : undefined}
+          badge={<Badge variant="warning">Force</Badge>}
+          label="강제 업데이트 버전"
+          version={forceVersion?.version}
+          sub={forceVersion ? `${formatDate(forceVersion.createdAt)} 등록` : undefined}
         />
       </div>
 

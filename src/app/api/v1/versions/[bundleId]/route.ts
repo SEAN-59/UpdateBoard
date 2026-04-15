@@ -1,4 +1,4 @@
-// 공개 클라이언트 API — 특정 bundleId 의 latest + min 버전 조회
+// 공개 클라이언트 API — 특정 bundleId 의 latest + force 버전 조회
 // OpenAPI 명세: docs 페이지 (/api-docs) 의 `VersionInfo` 스키마와 일치
 // 인증: Authorization: Bearer <api-key>
 // Rate limit: 인증 성공 시 API 키 ID 기준, 실패/익명 요청은 IP 기준
@@ -8,7 +8,7 @@ import { UnauthorizedError, verifyApiKey } from "@/lib/api/auth";
 import { consumeToken, RATE_LIMITS } from "@/lib/rate-limit";
 import { getRepo } from "@/lib/repo";
 import type { VersionMode } from "@/lib/types";
-import { effectiveMinSupported } from "@/lib/version";
+import { effectiveForceVersion } from "@/lib/version";
 
 type RouteParams = {
   params: Promise<{ bundleId: string }>;
@@ -110,13 +110,13 @@ export async function GET(request: Request, { params }: RouteParams) {
     );
   }
 
-  const minSupported = effectiveMinSupported(modeVersions);
+  const forceVersion = effectiveForceVersion(modeVersions);
 
   return NextResponse.json({
     bundleId,
     mode,
     latest: latest.version,
-    min: minSupported?.version ?? null,
+    force: forceVersion?.version ?? null,
     releaseNote: latest.releaseNote,
   });
 }
