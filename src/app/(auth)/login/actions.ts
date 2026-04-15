@@ -1,22 +1,47 @@
 "use server";
 
-// 로그인 server action — env 의 ADMIN_ID / ADMIN_PW_HASH 와 비교
-// Phase 1 stub: 비밀번호 일치 시 세션 쿠키에 userId 저장 (서명 없음)
-// Phase 3 (Phase 2 다음 단계) 에서 SESSION_SECRET 으로 서명/만료 처리 추가 예정
+// 로그인 server action — env 의 ADMIN_ID / ADMIN_PW_HASH 와 bcrypt 비교
+// + 서명된 세션 쿠키 발급 + IP 당 rate limit
 
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { setSession } from "@/lib/auth/session";
+import { consumeToken, RATE_LIMITS } from "@/lib/rate-limit";
 
 export type LoginFormState = {
   ok: boolean;
   error?: string;
 };
 
+// X-Forwarded-For / X-Real-IP / (fallback) unknown
+async function getClientIp(): Promise<string> {
+  const h = await headers();
+  const forwarded = h.get("x-forwarded-for");
+  if (forwarded) {
+    // 여러 IP 가 쉼표로 연결되어 올 수 있음 — 첫 번째가 원 클라이언트
+    return forwarded.split(",")[0].trim();
+  }
+  const realIp = h.get("x-real-ip");
+  if (realIp) return realIp.trim();
+  return "unknown";
+}
+
 export async function loginAction(
   _prev: LoginFormState,
   formData: FormData,
 ): Promise<LoginFormState> {
+  // Rate limit 은 제일 먼저 체크해서 brute-force 공격이 bcrypt 비교까지 가지 않게 한다
+  const ip = await getClientIp();
+  const rateCheck = consumeToken(`login:${ip}`, RATE_LIMITS.login);
+  if (!rateCheck.allowed) {
+    const minutes = Math.ceil(rateCheck.retryAfterSec / 60);
+    return {
+      ok: false,
+      error: `로그인 시도가 너무 많습니다. 약 ${minutes}분 뒤에 다시 시도해주세요.`,
+    };
+  }
+
   const id = String(formData.get("id") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
