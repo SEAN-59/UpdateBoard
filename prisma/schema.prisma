@@ -47,6 +47,7 @@ model AppVersion {
 
   app App @relation(fields: [bundleId], references: [bundleId], onDelete: Cascade)
 
+  @@unique([bundleId, mode, version])
   @@index([bundleId, mode])
   @@index([bundleId, mode, isLatest])
   @@index([bundleId, mode, forceUpdate])

@@ -1,6 +1,7 @@
 // PrismaRepo — Repo 인터페이스의 Prisma + MariaDB 구현
 // src/lib/repo/mock.ts 와 동일한 시그니처. 라우트 코드는 변경 없이 동작.
 
+import bcrypt from "bcryptjs";
 import type { App, AppVersion, ApiKey, Platform, VersionMode } from "@/lib/types";
 import type {
   CreateAppInput,
@@ -12,6 +13,8 @@ import type {
   UpdateVersionInput,
 } from "./interface";
 import { getPrisma } from "./prisma-client";
+
+const API_KEY_HASH_ROUNDS = 10;
 
 function generateToken(): { full: string; prefix: string } {
   const random = Array.from({ length: 24 }, () =>
@@ -208,12 +211,13 @@ class PrismaRepo implements Repo {
 
   async createApiKey(input: CreateApiKeyInput): Promise<IssuedApiKey> {
     const { full, prefix } = generateToken();
+    const hash = await bcrypt.hash(full, API_KEY_HASH_ROUNDS);
     const row = await this.db.apiKey.create({
       data: {
         name: input.name,
         bundleId: input.bundleId,
         tokenPrefix: prefix,
-        tokenHash: full, // PR 2 에서 bcrypt 해시로 교체
+        tokenHash: hash,
       },
     });
     return { apiKey: mapApiKey(row), fullToken: full };
