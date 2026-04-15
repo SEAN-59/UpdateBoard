@@ -14,8 +14,6 @@ import { PLATFORM_LIST, PLATFORM_META } from "@/lib/platform";
 import type { Platform } from "@/lib/types";
 import { createAppAction, type CreateAppFormState } from "./actions";
 
-const BUNDLE_ID_REGEX = /^[a-z][a-z0-9]*(\.[a-z0-9][a-z0-9-]*)+$/;
-
 const initialState: CreateAppFormState = { ok: false };
 
 type AppFormProps = {
@@ -27,14 +25,14 @@ export function AppForm({ existingBundleIds }: AppFormProps) {
   const [bundleId, setBundleId] = useState("");
   const [platform, setPlatform] = useState<Platform>("ios");
 
+  // bundleId 는 실제 iOS/Android 에서 대소문자 혼용이 흔해서 엄격한 regex 를 두지 않는다.
+  // 길이와 중복만 검사한다.
   const rules: ValidationRule[] = bundleId.length === 0
     ? [
-        { label: "역순 도메인 형식 (예: com.company.app)", status: null },
         { label: "4자 이상, 100자 이하", status: null },
         { label: "다른 앱과 중복되지 않음", status: null },
       ]
     : [
-        { label: "역순 도메인 형식 (예: com.company.app)", status: BUNDLE_ID_REGEX.test(bundleId) },
         { label: "4자 이상, 100자 이하", status: bundleId.length >= 4 && bundleId.length <= 100 },
         { label: "다른 앱과 중복되지 않음", status: !existingBundleIds.includes(bundleId) },
       ];
