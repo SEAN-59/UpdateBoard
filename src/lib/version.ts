@@ -1,4 +1,4 @@
-// SemVer 비교 + forceUpdate 기반 최소 지원 버전 계산
+// SemVer 비교 + forceUpdate 기반 강제 업데이트 버전 계산
 
 import type { AppVersion } from "./types";
 
@@ -21,9 +21,10 @@ function parseVersion(v: string): [number, number, number] {
   return [segments[0] || 0, segments[1] || 0, segments[2] || 0];
 }
 
-// (bundleId, mode) 동일한 버전 목록에서 forceUpdate=true 인 것 중 SemVer 최댓값
-// 없으면 null
-export function effectiveMinSupported(versions: AppVersion[]): AppVersion | null {
+// (bundleId, mode) 동일한 버전 목록에서 forceUpdate=true 인 것 중 SemVer 최댓값.
+// 이 값이 "현재 유효한 강제 업데이트 버전" — 클라이언트 버전이 이보다 낮으면 강제 업데이트 대상.
+// 없으면 null.
+export function effectiveForceVersion(versions: AppVersion[]): AppVersion | null {
   const forced = versions.filter((v) => v.forceUpdate);
   if (forced.length === 0) return null;
   return forced.reduce((max, cur) =>

@@ -68,7 +68,7 @@ export function VersionEditForm({ version }: { version: AppVersion }) {
                 <Toggle
                   name="forceUpdate"
                   defaultChecked={version.forceUpdate}
-                  label="강제 업데이트 (이 버전을 최소 지원선으로 지정)"
+                  label="강제 업데이트 (이 버전을 강제 업데이트 기준으로 지정)"
                   description="이 버전 미만 사용자는 강제 업데이트 대상이 됩니다."
                 />
               </div>

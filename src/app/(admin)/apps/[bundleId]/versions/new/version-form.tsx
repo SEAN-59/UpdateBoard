@@ -87,8 +87,8 @@ export function VersionForm({ bundleId, defaultMode }: VersionFormProps) {
               />
               <Toggle
                 name="forceUpdate"
-                label="강제 업데이트 (이 버전을 최소 지원선으로 지정)"
-                description="이 버전 미만 사용자는 강제 업데이트 대상이 됩니다. 여러 버전이 체크돼도 실제 적용되는 바닥선은 그 중 SemVer 최댓값."
+                label="강제 업데이트 (이 버전을 강제 업데이트 기준으로 지정)"
+                description="이 버전 미만 사용자는 강제 업데이트 대상이 됩니다. 여러 버전이 체크돼도 실제 적용되는 기준은 그 중 SemVer 최댓값."
               />
             </div>
           </FormField>
