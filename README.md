@@ -154,10 +154,18 @@ Content-Type: application/json
 ### 인증 방식
 
 - 관리자 한 명만 사용하는 전제.
-- `ADMIN_PASSWORD` 로 `/login` 에서 로그인 → httpOnly · Secure · SameSite=Lax 쿠키 발급.
-- `middleware.ts` 가 `/admin/*` 과 관리 API 경로에서 쿠키를 검증한다.
+- `ADMIN_ID` + `ADMIN_PW_HASH` (bcrypt) 로 `/login` 에서 검증 → httpOnly · SameSite=Lax · Secure (prod) 쿠키 발급.
+- 세션 쿠키는 `SESSION_SECRET` 으로 **HMAC-SHA256 서명** 되며 `{ userId, exp }` payload 를 포함한다. 위변조되거나 만료된 쿠키는 즉시 `/login` 으로 redirect.
+- 세션 TTL: 8시간. 만료 후 재로그인 필요.
+- `/login` 은 IP 기준 rate limit — 15분에 5회.
+- 공개 API (`/api/v1/versions/*`) 는 API 키 기준 rate limit — 분당 60회.
 - 서버는 HTTPS 리버스 프록시 뒤에 있어야 한다. (평문 HTTP 환경에서는 쿠키/비밀번호가 노출될 수 있다.)
-- `/login` 은 IP 기반 간단한 rate limit 적용.
+
+#### `SESSION_SECRET` 로테이션
+
+- 용도: 세션 쿠키 서명 키. 유출 시 공격자가 임의 관리자로 위장 가능.
+- 로테이션 방법: `openssl rand -base64 48` 로 새 값을 생성해 `.env.local` / `web.dev.env` / `web.prod.env` 의 `SESSION_SECRET` 값만 교체 후 컨테이너 재배포.
+- **주의**: 로테이션 시 기존에 발급된 모든 세션이 무효화되므로 재로그인 필요. 관리자 1인 구조라 부작용이 작다.
 
 ---
 
@@ -365,10 +373,18 @@ Endpoints that create, update, or delete versions require the admin cookie. The 
 ### Authentication
 
 - Assumes a single administrator.
-- The admin logs in at `/login` with `ADMIN_PASSWORD`; on success an httpOnly · Secure · SameSite=Lax cookie is issued.
-- `middleware.ts` verifies the cookie on `/admin/*` and the admin API routes.
+- The admin logs in at `/login` with `ADMIN_ID` + `ADMIN_PW_HASH` (bcrypt); on success an httpOnly · SameSite=Lax · Secure (prod) cookie is issued.
+- The session cookie is **HMAC-SHA256 signed** with `SESSION_SECRET` and carries a `{ userId, exp }` payload. Tampered or expired cookies are rejected and the user is redirected to `/login`.
+- Session TTL: 8 hours. Re-login required after expiry.
+- `/login` is rate-limited per IP — 5 attempts per 15 minutes.
+- The public API (`/api/v1/versions/*`) is rate-limited per API key — 60 requests per minute.
 - The server must sit behind an HTTPS reverse proxy. (In a plaintext HTTP environment the cookie and password can be intercepted.)
-- `/login` has a simple IP-based rate limit.
+
+#### Rotating `SESSION_SECRET`
+
+- Purpose: signs session cookies. If leaked, an attacker can impersonate any admin.
+- How to rotate: generate a new value with `openssl rand -base64 48`, replace `SESSION_SECRET` in `.env.local` / `web.dev.env` / `web.prod.env`, and redeploy the containers.
+- **Note**: rotation invalidates all existing sessions, so a re-login is required. With a single-admin setup the impact is small.
 
 ---
 
