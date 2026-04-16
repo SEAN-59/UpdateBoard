@@ -17,12 +17,15 @@ async function main() {
   // App 1 — Sample App (iOS)
   const sample = await prisma.app.upsert({
     where: { bundleId: "com.updateboard.sample" },
-    update: {},
+    update: {
+      storeUrl: "https://apps.apple.com/app/id000000001",
+    },
     create: {
       bundleId: "com.updateboard.sample",
       name: "Sample App",
       platform: "ios",
       description: "Phase 3 시드 샘플 앱",
+      storeUrl: "https://apps.apple.com/app/id000000001",
       createdAt: now,
       updatedAt: now,
     },
