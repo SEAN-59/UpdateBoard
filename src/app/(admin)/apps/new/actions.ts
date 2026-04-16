@@ -12,7 +12,12 @@ const ALLOWED_PLATFORMS: Platform[] = ["ios", "android", "web", "desktop"];
 export type CreateAppFormState = {
   ok: boolean;
   message?: string;
-  fieldErrors?: { bundleId?: string; name?: string; platform?: string };
+  fieldErrors?: {
+    bundleId?: string;
+    name?: string;
+    platform?: string;
+    storeUrl?: string;
+  };
 };
 
 export async function createAppAction(
@@ -23,6 +28,8 @@ export async function createAppAction(
   const name = String(formData.get("name") ?? "").trim();
   const platformRaw = String(formData.get("platform") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || undefined;
+  const storeUrlRaw = String(formData.get("storeUrl") ?? "").trim();
+  const storeUrl = storeUrlRaw || undefined;
 
   const fieldErrors: CreateAppFormState["fieldErrors"] = {};
 
@@ -44,6 +51,12 @@ export async function createAppAction(
     fieldErrors.platform = "플랫폼을 선택하세요.";
   }
 
+  // storeUrl 은 http/https 웹 URL 뿐만 아니라 itms-apps:// / market:// 같은 네이티브
+  // 딥링크 스킴도 허용해야 해서 prefix 검증은 하지 않는다. 길이만 체크.
+  if (storeUrl && storeUrl.length > 500) {
+    fieldErrors.storeUrl = "500자 이하여야 합니다.";
+  }
+
   if (Object.keys(fieldErrors).length > 0) {
     return { ok: false, fieldErrors };
   }
@@ -62,6 +75,7 @@ export async function createAppAction(
     name,
     platform: platformRaw as Platform,
     description,
+    storeUrl,
   });
 
   revalidatePath("/apps");

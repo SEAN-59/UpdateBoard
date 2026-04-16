@@ -75,24 +75,55 @@ export default async function AppDetailPage({ params }: PageProps) {
       />
 
       {/* Meta Card */}
-      <div className="mb-6 grid grid-cols-1 gap-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg)] p-6 shadow-[var(--shadow-xs)] md:grid-cols-4">
-        <MetaItem label="표시 이름" value={app.name} />
-        <MetaItem
-          label="플랫폼"
-          value={
-            <span className="inline-flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
-                {initial}
+      <div className="mb-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg)] p-6 shadow-[var(--shadow-xs)]">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <MetaItem label="표시 이름" value={app.name} />
+          <MetaItem
+            label="플랫폼"
+            value={
+              <span className="inline-flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-accent-light)] text-[var(--color-accent)]">
+                  {initial}
+                </span>
+                <Badge variant={meta.badgeVariant}>{meta.label}</Badge>
               </span>
-              <Badge variant={meta.badgeVariant}>{meta.label}</Badge>
-            </span>
-          }
-        />
-        <MetaItem
-          label="Bundle ID"
-          value={<span className="font-mono text-sm">{app.bundleId}</span>}
-        />
-        <MetaItem label="생성일" value={formatDate(app.createdAt)} />
+            }
+          />
+          <MetaItem
+            label="Bundle ID"
+            value={<span className="font-mono text-sm">{app.bundleId}</span>}
+          />
+          <MetaItem label="생성일" value={formatDate(app.createdAt)} />
+        </div>
+        <div className="mt-4 border-t border-[var(--color-border)] pt-4">
+          <MetaItem
+            label="스토어 URL"
+            value={
+              app.storeUrl ? (
+                <span className="inline-flex items-center gap-2 break-all font-mono text-sm text-[var(--color-text-primary)]">
+                  {app.storeUrl}
+                  {/^https?:\/\//i.test(app.storeUrl) && (
+                    <a
+                      href={app.storeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex flex-shrink-0 items-center text-[var(--color-accent)] hover:underline"
+                      aria-label="새 탭에서 열기"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </a>
+                  )}
+                </span>
+              ) : (
+                <span className="italic text-[var(--color-text-disabled)]">미설정</span>
+              )
+            }
+          />
+        </div>
       </div>
 
       <Tabs tabs={tabs} defaultValue="release" />
