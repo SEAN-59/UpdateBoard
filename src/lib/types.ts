@@ -8,6 +8,7 @@ export type App = {
   name: string;
   platform: Platform;
   description?: string;
+  storeUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 };

@@ -99,6 +99,21 @@ export function AppForm({ existingBundleIds }: AppFormProps) {
           <FormField label="설명" htmlFor="description" hint="(선택) 앱 설명을 적어두면 목록에서 빠르게 식별할 수 있습니다.">
             <Input id="description" name="description" placeholder="(선택)" />
           </FormField>
+
+          <FormField
+            label="스토어 URL"
+            htmlFor="storeUrl"
+            hint="(선택) 네이티브 딥링크 전부 허용"
+            error={state.fieldErrors?.storeUrl}
+          >
+            <Input
+              id="storeUrl"
+              name="storeUrl"
+              placeholder="https://... 또는 itms-apps://..."
+              maxLength={500}
+              invalid={!!state.fieldErrors?.storeUrl}
+            />
+          </FormField>
         </CardBody>
         <CardFooter className="flex justify-end gap-2">
           <Link href="/apps">

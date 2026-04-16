@@ -168,6 +168,7 @@ class MockRepo implements Repo {
       name: input.name,
       platform: input.platform,
       description: input.description,
+      storeUrl: input.storeUrl,
       createdAt: now,
       updatedAt: now,
     };
@@ -179,9 +180,12 @@ class MockRepo implements Repo {
     const store = getStore();
     const existing = store.apps.get(bundleId);
     if (!existing) throw new Error(`존재하지 않는 bundleId: ${bundleId}`);
+    const { storeUrl, ...rest } = input;
     const updated: App = {
       ...existing,
-      ...input,
+      ...rest,
+      // storeUrl === null 은 명시적 clear, undefined 는 변경 없음, string 은 덮어쓰기
+      ...(storeUrl !== undefined && { storeUrl: storeUrl ?? undefined }),
       updatedAt: new Date(),
     };
     store.apps.set(bundleId, updated);

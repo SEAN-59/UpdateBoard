@@ -30,6 +30,7 @@ function mapApp(row: {
   name: string;
   platform: string;
   description: string | null;
+  storeUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): App {
@@ -38,6 +39,7 @@ function mapApp(row: {
     name: row.name,
     platform: row.platform as Platform,
     description: row.description ?? undefined,
+    storeUrl: row.storeUrl ?? undefined,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -111,6 +113,7 @@ class PrismaRepo implements Repo {
         name: input.name,
         platform: input.platform,
         description: input.description,
+        storeUrl: input.storeUrl,
       },
     });
     return mapApp(row);
@@ -123,6 +126,8 @@ class PrismaRepo implements Repo {
         ...(input.name !== undefined && { name: input.name }),
         ...(input.platform !== undefined && { platform: input.platform }),
         ...(input.description !== undefined && { description: input.description }),
+        // storeUrl: undefined 는 변경 없음, null 은 명시적 clear
+        ...(input.storeUrl !== undefined && { storeUrl: input.storeUrl }),
       },
     });
     return mapApp(row);

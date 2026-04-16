@@ -83,6 +83,22 @@ export function EditAppForm({ app }: { app: App }) {
             <FormField label="설명" htmlFor="description">
               <Input id="description" name="description" defaultValue={app.description ?? ""} placeholder="(선택)" />
             </FormField>
+
+            <FormField
+              label="스토어 URL"
+              htmlFor="storeUrl"
+              hint="(선택) 네이티브 딥링크 전부 허용. 비우면 저장된 값이 지워짐"
+              error={state.fieldErrors?.storeUrl}
+            >
+              <Input
+                id="storeUrl"
+                name="storeUrl"
+                defaultValue={app.storeUrl ?? ""}
+                placeholder="https://... 또는 itms-apps://..."
+                maxLength={500}
+                invalid={!!state.fieldErrors?.storeUrl}
+              />
+            </FormField>
           </CardBody>
           <CardFooter className="flex justify-end gap-2">
             <Link href={`/apps/${encodeURIComponent(app.bundleId)}`}>

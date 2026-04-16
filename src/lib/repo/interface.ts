@@ -7,12 +7,15 @@ export type CreateAppInput = {
   name: string;
   platform: Platform;
   description?: string;
+  storeUrl?: string;
 };
 
 export type UpdateAppInput = {
   name?: string;
   platform?: Platform;
   description?: string;
+  // null 은 명시적으로 storeUrl 을 지운다는 뜻. undefined 는 변경 없음.
+  storeUrl?: string | null;
 };
 
 export type CreateVersionInput = {
